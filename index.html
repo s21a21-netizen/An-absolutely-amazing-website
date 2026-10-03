@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サイバーパンク・ネクサス // 量子ポータル</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            50: '#f0fdf4',
+                            500: '#10b981',
+                            900: '#064e3b',
+                            neon: '#00ffcc',
+                            purple: '#bd00ff',
+                            dark: '#05050a',
+                            panel: 'rgba(13, 15, 28, 0.7)'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for futuristic icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #05050a;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        .orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(13, 17, 33, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 255, 204, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .glass-panel:hover {
+            border-color: rgba(0, 255, 204, 0.4);
+            box-shadow: 0 8px 32px 0 rgba(0, 255, 204, 0.1);
+        }
+        .neon-text {
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.7), 0 0 20px rgba(0, 255, 204, 0.4);
+        }
+        .neon-purple-text {
+            text-shadow: 0 0 10px rgba(189, 0, 255, 0.7), 0 0 20px rgba(189, 0, 255, 0.4);
+        }
+        .neon-border {
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #05050a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00ffcc44;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00ffcc88;
+        }
+        canvas#bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
+
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Top Header / Navigation -->
+    <header class="w-full p-4 md:px-8 border-b border-cyan-500/20 glass-panel sticky top-0 z-50 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center neon-border animate-pulse">
+                <i class="fa-solid fa-atom text-black font-bold text-xl"></i>
+            </div>
+            <div>
+                <h1 class="orbitron font-black text-xl md:text-2xl text-cyan-400 tracking-wider neon-text">ネクサスOS</h1>
+                <p class="text-xs text-purple-400 font-mono tracking-widest">v4.82 // 量子グリッド</p>
+            </div>
+        </div>
+
+        <!-- System Stats Bar (Top) -->
+        <div class="hidden lg:flex items-center space-x-6 text-xs font-mono">
+            <div class="flex items-center space-x-2 bg-black/40 px-3 py-1.5 rounded border border-cyan-500/20">
+                <span class="w-2 h-2 rounded-full bg-green-400 animate-ping"></span>
+                <span class="text-gray-400">コア同期:</span>
+                <span class="text-cyan-400 font-bold" id="sync-rate">99.98%</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-black/40 px-3 py-1.5 rounded border border-purple-500/20">
+                <i class="fa-solid fa-microchip text-purple-400"></i>
+                <span class="text-gray-400">ニューラル負荷:</span>
+                <span class="text-purple-400 font-bold" id="neural-load">34.2%</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-black/40 px-3 py-1.5 rounded border border-cyan-500/20">
+                <i class="fa-solid fa-shield-halved text-cyan-400"></i>
+                <span class="text-gray-400">ファイアウォール:</span>
+                <span class="text-green-400 font-bold">安全</span>
+            </div>
+        </div>
+
+        <!-- Quick Actions / Clock -->
+        <div class="flex items-center space-x-4">
+            <div class="text-right font-mono hidden sm:block">
+                <div id="live-clock" class="orbitron text-cyan-300 font-bold text-lg">00:00:00</div>
+                <div id="live-date" class="text-xs text-gray-400">2026.10.03 // 土</div>
+            </div>
+            <button onclick="toggleSoundMode()" id="audio-toggle" class="p-2.5 rounded-lg glass-panel text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-all" title="音声切り替え">
+                <i class="fa-solid fa-volume-high" id="audio-icon"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Widget 1: AI Oracle / Message Generator -->
+        <section class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="orbitron text-cyan-400 font-bold text-sm tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-brain text-purple-400"></i> AIオラクル // チャット
+                    </h2>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">オンライン</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">量子AIコアに問いかけるか、未来への啓示を生成せよ。</p>
+                
+                <!-- Terminal Output Box -->
+                <div id="ai-output" class="bg-black/60 border border-cyan-500/30 rounded-xl p-4 h-36 font-mono text-sm text-cyan-300 overflow-y-auto mb-4 flex flex-col justify-between">
+                    <div>
+                        <span class="text-purple-400">> </span><span id="ai-text">システム待機中... プロンプトを入力するか啓示ボタンを押してください。</span>
+                    </div>
+                    <div class="text-[10px] text-gray-500 text-right">セキュアリンク // 2026</div>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <input type="text" id="ai-input" placeholder="質問を入力 (例: 未来の天気は？)" class="w-full bg-black/50 border border-cyan-500/30 rounded-lg px-3 py-2 text-sm text-cyan-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 font-mono transition-all">
+                <div class="flex gap-2">
+                    <button onclick="askAI()" class="flex-1 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-300 font-bold py-2 rounded-lg text-xs orbitron tracking-wider transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-terminal"></i> 送信
+                    </button>
+                    <button onclick="generateOracle()" class="bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/50 text-purple-300 font-bold px-4 py-2 rounded-lg text-xs orbitron tracking-wider transition-all" title="啓示を受ける">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 啓示
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Widget 2: Cyber Sound Pad (Audio Synthesizer FX) -->
+        <section class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="orbitron text-cyan-400 font-bold text-sm tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-music text-cyan-400"></i> シンセパッド // オーディオ
+                    </h2>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">ウェーブGEN</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">パッドをタッチして、サイバー空間の周波数音響をリアルタイムで生成。</p>
+                
+                <!-- Pad Grid -->
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <button onclick="playSynth(220, 'sine')" class="h-16 rounded-xl bg-black/40 border border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-500/20 text-cyan-300 font-mono text-xs flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group/pad">
+                        <i class="fa-solid fa-wave-square text-cyan-400 group-hover/pad:scale-125 transition-transform"></i>
+                        <span>パルス1</span>
+                    </button>
+                    <button onclick="playSynth(440, 'square')" class="h-16 rounded-xl bg-black/40 border border-purple-500/30 hover:border-purple-400 hover:bg-purple-500/20 text-purple-300 font-mono text-xs flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group/pad">
+                        <i class="fa-solid fa-bolt text-purple-400 group-hover/pad:scale-125 transition-transform"></i>
+                        <span>スクエア</span>
+                    </button>
+                    <button onclick="playSynth(880, 'sawtooth')" class="h-16 rounded-xl bg-black/40 border border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-500/20 text-cyan-300 font-mono text-xs flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group/pad">
+                        <i class="fa-solid fa-bolt-lightning text-cyan-400 group-hover/pad:scale-125 transition-transform"></i>
+                        <span>ソウ</span>
+                    </button>
+                    <button onclick="playSynth(330, 'triangle')" class="h-16 rounded-xl bg-black/40 border border-purple-500/30 hover:border-purple-400 hover:bg-purple-500/20 text-purple-300 font-mono text-xs flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group/pad">
+                        <i class="fa-solid fa-triangle-exclamation text-purple-400 group-hover/pad:scale-125 transition-transform"></i>
+                        <span>トライ</span>
+                    </button>
+                    <button onclick="playSynth(550, 'sine')" class="h-16 rounded-xl bg-black/40 border border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-500/20 text-cyan-300 font-mono text-xs flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group/pad">
+                        <i class="fa-solid fa-satellite-dish text-cyan-400 group-hover/pad:scale-125 transition-transform"></i>
+                        <span>レーダー</span>
+                    </button>
+                    <button onclick="playArpeggio()" class="h-16 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-400/50 hover:border-cyan-300 text-white font-mono text-xs flex flex-col items-center justify-center gap-1 transition-all active:scale-95 group/pad shadow-lg shadow-cyan-500/10">
+                        <i class="fa-solid fa-compact-disc text-cyan-300 animate-spin"></i>
+                        <span>アルペジオ</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs font-mono text-gray-400 bg-black/40 p-2.5 rounded-lg border border-cyan-500/10">
+                <span>オーディオエンジン:</span>
+                <span class="text-cyan-400" id="audio-status">有効 (Web Audio API)</span>
+            </div>
+        </section>
+
+        <!-- Widget 3: Mini Game (Quantum Catcher) -->
+        <section class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="orbitron text-cyan-400 font-bold text-sm tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-gamepad text-purple-400"></i> 量子キャッチャー
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">スコア: <span id="game-score">0</span></span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mb-3">落下してくるデータフラグメントをキャッチせよ！</p>
+                
+                <!-- Game Canvas Container -->
+                <div class="relative w-full h-36 bg-black/70 border border-cyan-500/30 rounded-xl overflow-hidden cursor-crosshair flex items-center justify-center" id="game-container">
+                    <canvas id="mini-game-canvas" class="w-full h-full"></canvas>
+                    <div id="game-overlay" class="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
+                        <span class="orbitron text-cyan-400 font-bold text-sm">ミニゲーム 準備完了</span>
+                        <button onclick="startMiniGame()" class="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs rounded font-mono tracking-wider transition-all shadow-lg shadow-cyan-500/40">
+                            ゲーム開始
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs font-mono text-gray-400 mt-3">
+                <span>操作: マウス / タッチ移動</span>
+                <button onclick="resetMiniGame()" class="text-purple-400 hover:underline">リセット</button>
+            </div>
+        </section>
+
+        <!-- Widget 4: Task Manager / Neural Protocol -->
+        <section class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="orbitron text-cyan-400 font-bold text-sm tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-cyan-400"></i> ニューラルプロトコル
+                    </h2>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">タスク</span>
+                </div>
+                
+                <!-- Task Input -->
+                <div class="flex gap-2 mb-3">
+                    <input type="text" id="task-input" placeholder="新規プロトコルを追加..." class="flex-1 bg-black/50 border border-cyan-500/30 rounded-lg px-3 py-1.5 text-xs text-cyan-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 font-mono">
+                    <button onclick="addTask()" class="bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-300 px-3 py-1.5 rounded-lg text-xs orbitron font-bold transition-all">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+
+                <!-- Task List -->
+                <div id="task-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                    <!-- Dynamic Tasks inserted here -->
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] font-mono text-gray-400 mt-3 pt-2 border-t border-cyan-500/10">
+                <span id="task-counter">完了: 0 / 0</span>
+                <button onclick="clearCompletedTasks()" class="text-red-400 hover:underline">完了分を削除</button>
+            </div>
+        </section>
+
+        <!-- Widget 5: Cyber Weather & Environmental Monitor -->
+        <section class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="orbitron text-cyan-400 font-bold text-sm tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-bolt text-purple-400"></i> ネオ東京 // 大気環境
+                    </h2>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">セクター7</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-black/40 border border-cyan-500/20 rounded-xl p-3 flex items-center space-x-3">
+                        <i class="fa-solid fa-temperature-three-quarters text-cyan-400 text-xl"></i>
+                        <div>
+                            <div class="text-[10px] text-gray-400 font-mono">地表温度</div>
+                            <div class="orbitron text-cyan-300 font-bold text-lg">24.8°C</div>
+                        </div>
+                    </div>
+                    <div class="bg-black/40 border border-purple-500/20 rounded-xl p-3 flex items-center space-x-3">
+                        <i class="fa-solid fa-wind text-purple-400 text-xl"></i>
+                        <div>
+                            <div class="text-[10px] text-gray-400 font-mono">太陽風</div>
+                            <div class="orbitron text-purple-300 font-bold text-lg">420 km/s</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-2 font-mono text-xs">
+                    <div class="flex justify-between bg-black/30 p-2 rounded border border-cyan-500/10">
+                        <span class="text-gray-400">放射線指数:</span>
+                        <span class="text-green-400 font-bold">0.02 mSv (安全)</span>
+                    </div>
+                    <div class="flex justify-between bg-black/30 p-2 rounded border border-cyan-500/10">
+                        <span class="text-gray-400">大気圧:</span>
+                        <span class="text-cyan-300 font-bold">1013.2 hPa</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between text-[11px] font-mono text-gray-400">
+                <span>状態: 安定気象グリッド</span>
+                <span class="text-cyan-400 animate-pulse">ライブフィード</span>
+            </div>
+        </section>
+
+        <!-- Widget 6: Quick Cyber Launchpad & Links -->
+        <section class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="orbitron text-cyan-400 font-bold text-sm tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-globe text-cyan-400"></i> 量子ゲートウェイ
+                    </h2>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">リンク</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">グローバルネットへの高速アクセスゲートウェイ。</p>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="https://github.com" target="_blank" class="bg-black/40 hover:bg-cyan-500/10 border border-cyan-500/30 hover:border-cyan-400 p-3 rounded-xl transition-all flex items-center space-x-3 group/link">
+                        <i class="fa-brands fa-github text-cyan-400 text-lg group-hover/link:scale-110 transition-transform"></i>
+                        <div>
+                            <div class="orbitron text-xs font-bold text-cyan-200">ギットハブ</div>
+                            <div class="text-[10px] text-gray-400 font-mono">リポジトリ</div>
+                        </div>
+                    </a>
+                    <a href="https://wikipedia.org" target="_blank" class="bg-black/40 hover:bg-purple-500/10 border border-purple-500/30 hover:border-purple-400 p-3 rounded-xl transition-all flex items-center space-x-3 group/link">
+                        <i class="fa-solid fa-book-atlas text-purple-400 text-lg group-hover/link:scale-110 transition-transform"></i>
+                        <div>
+                            <div class="orbitron text-xs font-bold text-purple-200">アーカイブ</div>
+                            <div class="text-[10px] text-gray-400 font-mono">ウィキペディア</div>
+                        </div>
+                    </a>
+                    <a href="https://developer.mozilla.org" target="_blank" class="bg-black/40 hover:bg-cyan-500/10 border border-cyan-500/30 hover:border-cyan-400 p-3 rounded-xl transition-all flex items-center space-x-3 group/link">
+                        <i class="fa-solid fa-code text-cyan-400 text-lg group-hover/link:scale-110 transition-transform"></i>
+                        <div>
+                            <div class="orbitron text-xs font-bold text-cyan-200">MDN開発者</div>
+                            <div class="text-[10px] text-gray-400 font-mono">ドキュメント</div>
+                        </div>
+                    </a>
+                    <a href="https://news.google.com" target="_blank" class="bg-black/40 hover:bg-purple-500/10 border border-purple-500/30 hover:border-purple-400 p-3 rounded-xl transition-all flex items-center space-x-3 group/link">
+                        <i class="fa-solid fa-satellite text-purple-400 text-lg group-hover/link:scale-110 transition-transform"></i>
+                        <div>
+                            <div class="orbitron text-xs font-bold text-purple-200">ネットニュース</div>
+                            <div class="text-[10px] text-gray-400 font-mono">フィード</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between text-[11px] font-mono text-gray-400">
+                <span>ゲートウェイプロトコル: HTTP/3</span>
+                <span class="text-green-400">準備完了</span>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="w-full p-4 md:px-8 border-t border-cyan-500/20 glass-panel text-center font-mono text-xs text-gray-400 flex flex-col sm:flex-row items-center justify-between gap-2 mt-8">
+        <div>サイバーパンク・ネクサス・ポータル // 全システム稼働中</div>
+        <div class="flex items-center space-x-4">
+            <span class="text-cyan-400">IP: 192.168.0.404</span>
+            <span class="text-purple-400">応答: 12ms</span>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        const particles = [];
+        const particleCount = Math.min(width > 768 ? 80 : 40, 100);
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: (Math.random() - 0.5) * 0.8,
+                vy: (Math.random() - 0.5) * 0.8,
+                radius: Math.random() * 2 + 1,
+                color: Math.random() > 0.5 ? '#00ffcc' : '#bd00ff'
+            });
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw grid lines
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.03)';
+            ctx.lineWidth = 1;
+            const gridSize = 50;
+            for (let x = 0; x < width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            // Update and draw particles
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+                if (p.y < 0) p.y = height;
+                if (p.y > height) p.y = 0;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = p.color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Connect nearby particles
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dx = p.x - p2.x;
+                    let dy = p.y - p2.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = p.color === '#00ffcc' ? `rgba(0, 255, 204, ${1 - dist / 120})` : `rgba(189, 0, 255, ${1 - dist / 120})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('live-clock').innerText = `${hours}:${minutes}:${seconds}`;
+
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const weekDay = days[now.getDay()];
+            document.getElementById('live-date').innerText = `${year}.${month}.${day} // ${weekDay}`;
+
+            if (Math.random() > 0.7) {
+                const load = (30 + Math.random() * 15).toFixed(1);
+                document.getElementById('neural-load').innerText = `${load}%`;
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playSynth(freq, type) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + 0.6);
+            } catch (e) {
+                console.error("Audio error:", e);
+            }
+        }
+
+        function playArpeggio() {
+            if (!soundEnabled) return;
+            const freqs = [220, 277.18, 329.63, 440, 554.37, 659.25];
+            freqs.forEach((f, idx) => {
+                setTimeout(() => playSynth(f, 'sawtooth'), idx * 80);
+            });
+        }
+
+        function toggleSoundMode() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('audio-icon');
+            const status = document.getElementById('audio-status');
+            if (soundEnabled) {
+                icon.className = "fa-solid fa-volume-high";
+                status.innerText = "有効 (Web Audio API)";
+                status.className = "text-cyan-400";
+            } else {
+                icon.className = "fa-solid fa-volume-xmark";
+                status.innerText = "ミュート";
+                status.className = "text-red-400";
+            }
+        }
+
+        const aiOracles = [
+            "未来は固定されていない。君が選択するパスによって毎秒書き換えられている。",
+            "量子ネットの深層で、新たな可能性の波形が検出された。",
+            "焦る必要はない。データは常に最適なタイミングで集約される。",
+            "星々の輝きのように、君のコードもまた宇宙の演算の一部である。",
+            "システムは安定している。新しいアイデアを今すぐ実行せよ。"
+        ];
+
+        function askAI() {
+            const input = document.getElementById('ai-input');
+            const textElem = document.getElementById('ai-text');
+            const query = input.value.trim();
+            if (!query) return;
+
+            textElem.innerText = `解析中: "${query}"...`;
+            setTimeout(() => {
+                const replies = [
+                    `"${query}" について量子AIが解析完了。確率は99.8%で良好です。`,
+                    `質問「${query}」に対する解: 行動を起こすことで未来の確率収束が早まります。`,
+                    `セキュアリンク応答: "${query}" のクエリは正常に処理されました。全セクター異常なし。`
+                ];
+                const reply = replies[Math.floor(Math.random() * replies.length)];
+                textElem.innerText = reply;
+                input.value = '';
+                playSynth(600, 'sine');
+            }, 600);
+        }
+
+        function generateOracle() {
+            const textElem = document.getElementById('ai-text');
+            const oracle = aiOracles[Math.floor(Math.random() * aiOracles.length)];
+            textElem.innerText = `[啓示]: ${oracle}`;
+            playSynth(750, 'triangle');
+        }
+
+        document.getElementById('ai-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') askAI();
+        });
+
+        const gameCanvas = document.getElementById('mini-game-canvas');
+        const gCtx = gameCanvas.getContext('2d');
+        let gameActive = false;
+        let score = 0;
+        let playerX = 150;
+        let fragments = [];
+        let gameInterval = null;
+
+        function resizeGameCanvas() {
+            const container = document.getElementById('game-container');
+            gameCanvas.width = container.clientWidth;
+            gameCanvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeGameCanvas);
+        resizeGameCanvas();
+
+        function startMiniGame() {
+            document.getElementById('game-overlay').style.display = 'none';
+            score = 0;
+            document.getElementById('game-score').innerText = score;
+            fragments = [];
+            gameActive = true;
+            resizeGameCanvas();
+
+            gameInterval = setInterval(() => {
+                if (!gameActive) return;
+                fragments.push({
+                    x: Math.random() * (gameCanvas.width - 30) + 15,
+                    y: -20,
+                    speed: 2 + Math.random() * 2.5,
+                    radius: 10
+                });
+            }, 900);
+
+            requestAnimationFrame(updateGame);
+        }
+
+        function resetMiniGame() {
+            gameActive = false;
+            clearInterval(gameInterval);
+            document.getElementById('game-overlay').style.display = 'flex';
+        }
+
+        gameCanvas.addEventListener('mousemove', (e) => {
+            const rect = gameCanvas.getBoundingClientRect();
+            playerX = e.clientX - rect.left;
+        });
+
+        gameCanvas.addEventListener('touchmove', (e) => {
+            const rect = gameCanvas.getBoundingClientRect();
+            if (e.touches.length > 0) {
+                playerX = e.touches[0].clientX - rect.left;
+            }
+        });
+
+        function updateGame() {
+            if (!gameActive) return;
+
+            gCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+            gCtx.fillStyle = '#00ffcc';
+            gCtx.shadowBlur = 10;
+            gCtx.shadowColor = '#00ffcc';
+            gCtx.fillRect(playerX - 25, gameCanvas.height - 15, 50, 8);
+            gCtx.shadowBlur = 0;
+
+            for (let i = fragments.length - 1; i >= 0; i--) {
+                let f = fragments[i];
+                f.y += f.speed;
+
+                gCtx.beginPath();
+                gCtx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+                gCtx.fillStyle = '#bd00ff';
+                gCtx.shadowBlur = 8;
+                gCtx.shadowColor = '#bd00ff';
+                gCtx.fill();
+                gCtx.shadowBlur = 0;
+
+                if (f.y >= gameCanvas.height - 22 && f.x >= playerX - 30 && f.x <= playerX + 30) {
+                    score += 10;
+                    document.getElementById('game-score').innerText = score;
+                    fragments.splice(i, 1);
+                    playSynth(800, 'square');
+                    continue;
+                }
+
+                if (f.y > gameCanvas.height) {
+                    fragments.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(updateGame);
+        }
+
+        let tasks = [
+            { text: "量子暗号通信の同期テスト", completed: true },
+            { text: "ネオ東京セクターの巡回プログラム起動", completed: false },
+            { text: "メインAIコアのパラメーター最適化", completed: false }
+        ];
+
+        function renderTasks() {
+            const listContainer = document.getElementById('task-list');
+            listContainer.innerHTML = '';
+            let completedCount = 0;
+
+            tasks.forEach((task, idx) => {
+                if (task.completed) completedCount++;
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between bg-black/40 border ${task.completed ? 'border-cyan-500/10 opacity-60' : 'border-cyan-500/30'} p-2.5 rounded-xl transition-all`;
+                div.innerHTML = `
+                    <div class="flex items-center space-x-2.5 cursor-pointer flex-1 overflow-hidden" onclick="toggleTask(${idx})">
+                        <div class="w-4 h-4 rounded border ${task.completed ? 'bg-cyan-500 border-cyan-400 flex items-center justify-center text-black text-[10px]' : 'border-cyan-500/50'}">
+                            ${task.completed ? '<i class="fa-solid fa-check"></i>' : ''}
+                        </div>
+                        <span class="text-xs font-mono truncate ${task.completed ? 'line-through text-gray-500' : 'text-cyan-200'}">${task.text}</span>
+                    </div>
+                    <button onclick="deleteTask(${idx})" class="text-gray-500 hover:text-red-400 p-1 transition-colors">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                `;
+                listContainer.appendChild(div);
+            });
+
+            document.getElementById('task-counter').innerText = `完了: ${completedCount} / ${tasks.length}`;
+        }
+
+        function addTask() {
+            const input = document.getElementById('task-input');
+            const text = input.value.trim();
+            if (!text) return;
+            tasks.push({ text, completed: false });
+            input.value = '';
+            renderTasks();
+            playSynth(500, 'sine');
+        }
+
+        function toggleTask(idx) {
+            tasks[idx].completed = !tasks[idx].completed;
+            renderTasks();
+            playSynth(650, 'sine');
+        }
+
+        function deleteTask(idx) {
+            tasks.splice(idx, 1);
+            renderTasks();
+        }
+
+        function clearCompletedTasks() {
+            tasks = tasks.filter(t => !t.completed);
+            renderTasks();
+        }
+
+        document.getElementById('task-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+
+        renderTasks();
+    </script>
+</body>
+</html>
